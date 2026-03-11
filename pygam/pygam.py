@@ -2078,7 +2078,8 @@ class GAM(Core, MetaTermMixin):
 
         # copy over the best
         if keep_best:
-            self.set_params(deep=True, force=True, **best_model.get_params(deep=True))
+            for k, v in best_model.__dict__.items():
+                setattr(self, k, deepcopy(v))
         if return_scores:
             return OrderedDict(zip(models, scores))
         else:

@@ -1,5 +1,7 @@
 """Core Classes"""
 
+import copy
+
 import numpy as np
 
 from pygam.utils import flatten, round_to_n_decimal_places
@@ -137,32 +139,23 @@ class Core:
             args=None,
         )
 
-    def get_params(self, deep=False):
-        """
-        Returns a dict of all of the object's user-facing parameters.
+    @property
+    def _include(self):
+        return [
+            k
+            for k in self.__dict__.keys()
+            if (k[0] != "_")
+            and (k[-1] != "_")
+            and (k not in getattr(self, "_exclude", []))
+        ]
 
-        Parameters
-        ----------
-        deep : boolean, default: False
-            when True, also gets non-user-facing parameters
+    def get_params(self, deep=True):
+        params = {name: getattr(self, name) for name in self._include}
 
-        Returns
-        -------
-        dict
-        """
-        attrs = self.__dict__
-        for attr in self._include:
-            attrs[attr] = getattr(self, attr)
+        if deep:
+            params = copy.deepcopy(params)
 
-        if deep is True:
-            return attrs
-        return dict(
-            [
-                (k, v)
-                for k, v in list(attrs.items())
-                if (k[0] != "_") and (k[-1] != "_") and (k not in self._exclude)
-            ]
-        )
+        return params
 
     def set_params(self, deep=False, force=False, **parameters):
         """
