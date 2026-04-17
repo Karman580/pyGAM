@@ -111,6 +111,11 @@ class Term(Core):
         super(Term, self).__init__(name=self._name)
         self._validate_arguments()
 
+    def __sklearn_clone__(self):
+        """Scikit-learn compatibility for cloning objects."""
+        from copy import deepcopy
+        return deepcopy(self)
+
     def __len__(self):
         return 1
 
@@ -1669,6 +1674,15 @@ class TermList(Core, MetaTermMixin):
 
     def __init__(self, *terms, **kwargs):
         super(TermList, self).__init__()
+        
+        # handle terms passed via kwargs (e.g., from sklearn.clone)
+        if "terms" in kwargs:
+            extra_terms = kwargs.pop("terms")
+            if hasattr(extra_terms, "__iter__"):
+                terms = terms + tuple(extra_terms)
+            else:
+                terms = terms + (extra_terms,)
+
         self.verbose = kwargs.pop("verbose", False)
 
         if bool(kwargs):
@@ -1756,6 +1770,11 @@ class TermList(Core, MetaTermMixin):
     def __mul__(self, other):
         raise NotImplementedError()
 
+    def __sklearn_clone__(self):
+        """Scikit-learn compatibility for cloning objects."""
+        from copy import deepcopy
+        return deepcopy(self)
+
     def _validate_arguments(self):
         """Method to sanitize model parameters.
 
@@ -1770,6 +1789,15 @@ class TermList(Core, MetaTermMixin):
         if self._has_terms():
             [term._validate_arguments() for term in self._terms]
         return self
+
+    def get_params(self, deep=False):
+        """
+        Returns a dict of all of the object's user-facing parameters.
+        Includes terms for sklearn clone compatibility.
+        """
+        params = super(TermList, self).get_params(deep=deep)
+        params["terms"] = self._terms
+        return params
 
     @property
     def info(self):

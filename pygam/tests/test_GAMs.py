@@ -1,4 +1,5 @@
 import pytest
+from sklearn.base import clone
 
 from pygam import (
     GAM,
@@ -112,3 +113,34 @@ def test_ExpectileGAM_bad_expectiles(mcycle_X_y):
 
 
 # TODO check dicts: DISTRIBUTIONS etc
+
+
+def test_clone_preserves_terms():
+    """
+    check that sklearn.clone preserves explicit GAM terms
+    """
+    from pygam import s
+    gam = LinearGAM(s(0) + s(1))
+    gam_cloned = clone(gam)
+    
+    assert len(gam_cloned.terms) == 2
+    assert gam_cloned.terms.info == gam.terms.info
+
+
+def test_clone_works_before_and_after_fit(mcycle_X_y):
+    """
+    check that sklearn.clone works before and after fitting
+    """
+    from pygam import s
+    X, y = mcycle_X_y
+    gam = LinearGAM(s(0))
+    gam_cloned_before = clone(gam)
+    assert len(gam_cloned_before.terms) == 1
+    
+    gam.fit(X, y)
+    gam_cloned_after = clone(gam)
+    assert len(gam_cloned_after.terms) == 2
+    
+    # Check that the cloned model can be refit correctly
+    gam_cloned_after.fit(X, y)
+    assert gam_cloned_after._is_fitted
